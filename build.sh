@@ -4,16 +4,16 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "$0")" && pwd)
 cd "$ROOT_DIR"
 
-if command -v mvn >/dev/null 2>&1 && mvn -v >/dev/null 2>&1; then
-  MVN_CMD=mvn
+if command -v mvn >/dev/null 2>&1 && mvn -v >/dev/null 2>&1 && mvn -v | rg -q "Java version: 25\\."; then
+  MVN_CMD="mvn"
 elif command -v docker >/dev/null 2>&1; then
   DOCKER_CMD="docker"
   if ! docker info >/dev/null 2>&1; then
     DOCKER_CMD="sudo docker"
   fi
-  MVN_CMD="$DOCKER_CMD run --rm -v $ROOT_DIR/backend:/app -w /app maven:3.9-eclipse-temurin-17 mvn"
+  MVN_CMD="$DOCKER_CMD run --rm -v $ROOT_DIR/backend:/app -w /app maven:3.9.9-eclipse-temurin-25 mvn"
 else
-  echo "Neither Maven nor Docker found. Please install one of them or set MVN_CMD manually." >&2
+  echo "Neither Maven(Java 25) nor Docker found. Please install JDK 25+Maven or Docker, or set MVN_CMD manually." >&2
   exit 1
 fi
 
@@ -53,4 +53,4 @@ $DCMD build
 echo "[6/6] Starting stack"
 $DCMD up -d
 
-echo "Deployment completed. Frontend: http://localhost:4173  Backend: http://localhost:8081"
+echo "Deployment completed. Frontend: http://samproject.seekerhut.com  Backend: http://samproject.seekerhut.com:8081"

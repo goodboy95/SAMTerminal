@@ -26,7 +26,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/sam?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: root
       DB_PASSWORD: 123456
-      CORS_ORIGINS: http://localhost:4173,http://localhost:5173,http://localhost:8080,http://localhost
+      CORS_ORIGINS: http://samproject.seekerhut.com,http://localhost:4173,http://localhost:5173,http://localhost:8080,http://localhost
       JWT_SECRET: devsecretkeysamterminal1234567890abcd
       CHROMA_URL: http://chromadb:8000
       UPLOAD_DIR: /data/uploads
@@ -44,7 +44,7 @@ services:
     environment:
       - NODE_ENV=production
     ports:
-      - "4173:80"
+      - "80:80"
 
   chromadb:
     image: chromadb/chroma:latest
