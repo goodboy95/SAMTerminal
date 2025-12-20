@@ -1,0 +1,27 @@
+# 项目目录结构说明（截至2025-12-20）
+
+- `frontend/`：React 18 + TypeScript + Vite 前端源代码（基于设计稿实现）。
+  - `src/`：前端业务代码与组件。
+  - `public/`：静态资源。
+  - `.env.production`：生产构建环境变量（配置 API_BASE）。
+  - `nginx.conf`：前端容器的 SPA 路由回退配置。
+  - `Dockerfile`：前端构建并由 Nginx 提供静态文件的镜像定义。
+- `backend/`：Spring Boot 3 后端服务源码。
+  - `src/main/java/com/samterminal/backend/`：主业务代码、控制器、服务、实体、配置、DTO。
+  - `src/test/java/...`：后端单元测试（GameServiceTest、TokenUsageServiceTest）。
+  - `src/test/resources/application.yml`：测试环境配置（H2 内存库、JWT 测试密钥）。
+  - `pom.xml`：Maven 依赖与插件（包含 Lombok、JPA、Web、Security、JWT、测试插件）。
+  - `Dockerfile`：后端服务镜像定义（构建阶段 + 运行阶段）。
+- `doc/`：项目文档
+  - `structure.md`：本文件，记录目录与作用。
+  - `api/`：接口文档（见各 Controller 对应文件，如 admin/world/game/player/upload）。
+  - `modules/`：模块设计与说明。
+  - `v1.0plus-plan.md`：基于设计稿与现有代码的功能缺口与开发方案清单。
+  - `test/operation.md`：功能操作与测试步骤。
+  - `test/integratedTest.md`：集成/系统测试用例清单。
+  - `issues.md`：问题记录（若有）。
+- `sql/schema.sql`：MySQL 初始化表结构定义。
+- `docker-compose.yml`：编排前端、后端、MySQL、ChromaDB 服务的运行。
+- `build.sh`：一键构建、测试、镜像打包并启动 docker-compose 的脚本。
+- `AGENTS.md`：开发/测试强制要求。
+- `design/`：原始设计稿与说明文档，仅作为参考，不直接参与构建。

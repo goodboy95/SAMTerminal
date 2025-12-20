@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/sam?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  sql:
+    init:
+      mode: never
+server:
+  port: ${PORT:8080}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:devsecretkeysamterminal1234567890abcd}
+    expiration: 86400000
+
+cors:
+  allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:4173}
+
+app:
+  upload-dir: ${UPLOAD_DIR:uploads}
+
+chroma:
+  url: ${CHROMA_URL:http://localhost:8000}
