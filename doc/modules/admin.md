@@ -1,5 +1,6 @@
 # 后台管理模块（/admin, /admin/dashboard/*）
 
+- **管理员账号来源**：后端 `backend/src/main/resources/application.yml` 中 `app.admins` 支持配置多个管理员账号，启动时会自动同步到数据库并赋予 `ADMIN` 角色。
 - **登录**：调用 `/api/admin/login`，要求返回 role=ADMIN。
 - **立绘管理**：对接 `/api/admin/assets/firefly`，表单保存情绪对应资源 URL。
 - **星域/区域管理**：`/api/admin/world/domains`、`/api/admin/world/locations`，支持新增/更新/删除/批量导入，附带 AI 描述与背景图上传。

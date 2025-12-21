@@ -13,7 +13,7 @@
 4. 点击菜单 → “背包/记忆”，核对背包物品、记忆列表来自 `/api/player/*`；点击记忆卡片触发 `/api/game/memory/recall` 并出现回忆回复。
 
 ## 3. 管理后台
-1. 访问 `/admin`，使用 `app.admins` 配置的管理员账号登录，成功后进入 `/admin/dashboard`。
+1. 访问 `/admin`，使用 `app.admins` 配置的管理员账号登录，成功后进入 `/admin/dashboard`（默认示例账号：`admin/AdminPass123456`、`operator/OperatorPass123456`）。
 2. **立绘管理**：修改某情绪 URL 或上传图片，点击“保存配置”，调用 `/api/admin/assets/firefly`。
 3. **区域与星球**：在“区域场景/星域”页编辑字段后点击“保存”或“保存所有更改”，对应 POST `/api/admin/world/*`；可执行批量导入或删除。
 4. **角色档案**：新增角色、上传头像并保存，调用 `/api/admin/world/characters`；可执行批量导入或删除。

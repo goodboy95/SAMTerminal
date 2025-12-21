@@ -30,9 +30,6 @@ services:
       JWT_SECRET: devsecretkeysamterminal1234567890abcd
       CHROMA_URL: http://chromadb:8000
       UPLOAD_DIR: /data/uploads
-      APP_ADMINS_0_USERNAME: ${APP_ADMINS_0_USERNAME:-}
-      APP_ADMINS_0_PASSWORD: ${APP_ADMINS_0_PASSWORD:-}
-      APP_ADMINS_0_EMAIL: ${APP_ADMINS_0_EMAIL:-}
     ports:
       - "8081:8080"
     volumes:

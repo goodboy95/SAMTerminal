@@ -29,7 +29,15 @@ cors:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
-  admins: []
+  # 后台(/admin)管理员账号：支持配置多个，启动时会自动同步到数据库并赋予 ADMIN 角色。
+  # 注意：此处为示例默认值，生产环境建议通过私有配置文件或环境变量覆盖。
+  admins:
+    - username: admin
+      password: AdminPass123456
+      email: admin@sam.local
+    - username: operator
+      password: OperatorPass123456
+      email: operator@sam.local
   llm:
     min-remaining-tokens: ${APP_LLM_MIN_REMAINING_TOKENS:2000}
     min-remaining-percent: ${APP_LLM_MIN_REMAINING_PERCENT:5}

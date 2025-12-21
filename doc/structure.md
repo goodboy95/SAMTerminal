@@ -34,13 +34,26 @@
     - `service/LlmSettingMigrationService.java`：旧 LlmSetting 迁移至 API 池。
     - `service/NoAvailableApiException.java`：API 池无可用配置异常。
   - `src/main/resources/application.yml`：后端运行配置。
-  - `src/test/java/...`：后端单元测试（GameServiceTest、GameServiceUnlockTest、UserLocationUnlockServiceTest、TokenUsageServiceTest、LlmPoolServiceTest、SessionServiceTest）。
+  - `src/test/java/com/samterminal/backend/GameServiceTest.java`：GameService 主流程的集成测试（H2）。
+  - `src/test/java/com/samterminal/backend/GameServiceUnlockTest.java`：地点解锁相关逻辑测试。
+  - `src/test/java/com/samterminal/backend/LlmPoolServiceTest.java`：LLM API 池选路/熔断相关测试。
+  - `src/test/java/com/samterminal/backend/SessionServiceTest.java`：会话创建/续期/过期相关测试。
+  - `src/test/java/com/samterminal/backend/TokenUsageServiceTest.java`：Token 统计与限额相关测试。
+  - `src/test/java/com/samterminal/backend/UserLocationUnlockServiceTest.java`：地点解锁幂等写入测试。
+  - `src/test/java/com/samterminal/backend/service/AdminAccountServiceTest.java`：管理员账号同步逻辑的单元测试。
   - `src/test/resources/application.yml`：测试环境配置（H2 内存库、JWT 测试密钥）。
+  - `src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker`：Mockito 测试配置，使用 subclass mock maker 避免动态 agent 附加失败。
   - `pom.xml`：Maven 依赖与插件。
   - `Dockerfile`：后端服务镜像定义。
 - `doc/`：项目文档
   - `structure.md`：本文件，记录目录与作用。
   - `api/`：接口文档（见各 Controller 对应文件，如 admin/world/game/player/upload）。
+  - `captcha/`：注册邮件验证（ALTCHA + 邮件验证码）相关开发/安全/测试文档。
+    - `captcha/README.md`：本目录索引与建议阅读顺序。
+    - `captcha/development.md`：注册邮件验证功能的详细开发方案（前台、后台、后端、DB、接口建议）。
+    - `captcha/altcha.md`：ALTCHA 接入指南（含 Sentinel 部署/代理与前端 widget 集成建议）。
+    - `captcha/security-performance.md`：安全与性能注意事项与建议默认参数。
+    - `captcha/testing.md`：测试内容与方案（单测/集测/E2E 建议）。
   - `modules/`：模块设计与说明（含 LLM API 池模块说明）。
   - `v1.0plus-plan.md`：基于设计稿与现有代码的功能缺口与开发方案清单。
   - `v0.2.0/`：V0.2.0 版本详细开发、测试与安全性能文档。
