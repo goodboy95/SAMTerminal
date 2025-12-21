@@ -2,8 +2,9 @@
 
 ## 1. 用户端（/）
 1. 打开 `http://samproject.seekerhut.com:8090/`。
-2. 在“接入系统”输入用户名/密码，点击“初始化连接”触发 `/api/auth/login`；或切换“注册识别码”填写代号、邮箱、密码提交注册。
-3. 登录成功自动跳转 `/game`。
+2. 在“接入系统”输入用户名/密码，点击“初始化连接”触发 `/api/auth/login`；或切换“注册识别码”进行注册。
+3. 注册流程：填写代号与邮箱 → 点击“发送验证邮件”并完成 ALTCHA → 输入验证码并点击“验证验证码” → 验证通过后提交档案。
+4. 登录或注册成功自动跳转 `/game`。
 
 ## 2. 游戏主界面（/game）
 1. 页面加载后自动请求 `/api/game/status` 与 `/api/world/map`。
@@ -19,6 +20,7 @@
 4. **角色档案**：新增角色、上传头像并保存，调用 `/api/admin/world/characters`；可执行批量导入或删除。
 5. **用户 Token 监测**：进入“用户 Token 监测”，调整全局或单用户上限，调用 `/api/admin/settings/global-limit` 与 `/api/admin/users/{id}/limit`。
 6. **LLM API 池**：新增/编辑 API（BaseURL、API Key、模型、角色、Token 限额、负载），调用 `/api/admin/system/llm-apis`；可执行测试连接与重置 Token。
+7. **邮件验证管理**：进入“邮件验证管理”页，配置 SMTP、查看发送日志并解密验证码、查看 IP 统计及手动封禁/解封。
 
 ## 4. 部署验证
 1. 运行 `./build.sh`，脚本会执行后端测试、前端构建并启动 docker-compose。

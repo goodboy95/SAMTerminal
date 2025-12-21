@@ -1,0 +1,6 @@
+# Disposable email domains (sample subset)
+mailinator.com
+10minutemail.com
+guerrillamail.com
+trashmail.com
+tempmail.com

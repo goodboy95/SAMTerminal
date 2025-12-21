@@ -49,6 +49,43 @@ export const api = {
     if (!res.ok) throw new Error('注册失败');
     return res.json();
   },
+  async sendRegisterEmailCode(username: string, email: string, altchaPayload: string) {
+    const res = await fetch(`${API_BASE}/api/auth/register/email-code/send`, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ username, email, altchaPayload })
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const error: any = new Error(data?.error || '发送失败');
+      (error as any).payload = data;
+      throw error;
+    }
+    return res.json();
+  },
+  async verifyRegisterEmailCode(emailRequestId: string, email: string, emailCode: string) {
+    const res = await fetch(`${API_BASE}/api/auth/register/email-code/verify`, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ emailRequestId, email, emailCode })
+    });
+    if (!res.ok) throw new Error('验证码校验失败');
+    return res.json();
+  },
+  async registerWithEmailCode(username: string, email: string, password: string, emailCode: string, emailRequestId: string): Promise<AuthResult> {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ username, email, password, emailCode, emailRequestId })
+    });
+    if (!res.ok) throw new Error('注册失败');
+    return res.json();
+  },
+  async emailSendStatus(requestId: string) {
+    const res = await fetch(`${API_BASE}/api/auth/register/email-code/send-status?requestId=${encodeURIComponent(requestId)}`);
+    if (!res.ok) throw new Error('获取发送状态失败');
+    return res.json();
+  },
   async status(token?: string): Promise<GameState> {
     const res = await fetch(`${API_BASE}/api/game/status`, { headers: jsonHeaders(token) });
     if (!res.ok) throw new Error('获取状态失败');
@@ -302,6 +339,93 @@ export const api = {
   async adminUsage(token?: string): Promise<any> {
     const res = await fetch(`${API_BASE}/api/admin/users/usage`, { headers: jsonHeaders(token) });
     if (!res.ok) throw new Error('获取用量失败');
+    return res.json();
+  },
+  async adminEmailSmtpConfigs(token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/smtp`, { headers: jsonHeaders(token) });
+    if (!res.ok) throw new Error('读取 SMTP 配置失败');
+    return res.json();
+  },
+  async adminCreateEmailSmtpConfig(payload: any, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/smtp`, {
+      method: 'POST',
+      headers: jsonHeaders(token),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('创建 SMTP 失败');
+    return res.json();
+  },
+  async adminUpdateEmailSmtpConfig(id: number, payload: any, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/smtp/${id}`, {
+      method: 'PUT',
+      headers: jsonHeaders(token),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('更新 SMTP 失败');
+    return res.json();
+  },
+  async adminDeleteEmailSmtpConfig(id: number, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/smtp/${id}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('删除 SMTP 失败');
+    return res.json();
+  },
+  async adminTestEmailSmtpConfig(id: number, toEmail: string, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/smtp/${id}/test`, {
+      method: 'POST',
+      headers: jsonHeaders(token),
+      body: JSON.stringify({ toEmail })
+    });
+    if (!res.ok) throw new Error('测试 SMTP 失败');
+    return res.json();
+  },
+  async adminEmailLogs(params: { start: string; end: string; page?: number; size?: number; sort?: string }, token?: string) {
+    const query = new URLSearchParams();
+    query.set('start', params.start);
+    query.set('end', params.end);
+    if (params.page != null) query.set('page', String(params.page));
+    if (params.size != null) query.set('size', String(params.size));
+    if (params.sort) query.set('sort', params.sort);
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/logs?${query.toString()}`, { headers: jsonHeaders(token) });
+    if (!res.ok) throw new Error('读取日志失败');
+    return res.json();
+  },
+  async adminDecryptEmailLog(id: number, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/logs/${id}/decrypt`, {
+      method: 'POST',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('解密失败');
+    return res.json();
+  },
+  async adminEmailIpStats(params: { date?: string; page?: number; size?: number; sortField?: string; sortDir?: string }, token?: string) {
+    const query = new URLSearchParams();
+    if (params.date) query.set('date', params.date);
+    if (params.page != null) query.set('page', String(params.page));
+    if (params.size != null) query.set('size', String(params.size));
+    if (params.sortField) query.set('sortField', params.sortField);
+    if (params.sortDir) query.set('sortDir', params.sortDir);
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/ip-stats?${query.toString()}`, { headers: jsonHeaders(token) });
+    if (!res.ok) throw new Error('读取 IP 统计失败');
+    return res.json();
+  },
+  async adminManualBanIp(ip: string, bannedUntil: string, reason?: string, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/ip-bans`, {
+      method: 'POST',
+      headers: jsonHeaders(token),
+      body: JSON.stringify({ ip, bannedUntil, reason })
+    });
+    if (!res.ok) throw new Error('封禁失败');
+    return res.json();
+  },
+  async adminManualUnbanIp(ip: string, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/email-verification/ip-bans/${encodeURIComponent(ip)}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('解封失败');
     return res.json();
   },
   async adminUpdateGlobalLimit(limit: number, token?: string) {

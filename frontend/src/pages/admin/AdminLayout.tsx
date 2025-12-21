@@ -8,6 +8,7 @@ import {
   Users, 
   Settings, 
   Activity,
+  Mail,
   LogOut 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,6 +36,7 @@ const AdminLayout = () => {
     { path: '/admin/dashboard/characters', label: '角色档案', icon: Users },
     { path: '/admin/dashboard/monitor', label: '用户 Token 监测', icon: Activity },
     { path: '/admin/dashboard/settings', label: 'LLM API 池', icon: Settings },
+    { path: '/admin/dashboard/email-verification', label: '邮件验证管理', icon: Mail },
   ];
 
   return (

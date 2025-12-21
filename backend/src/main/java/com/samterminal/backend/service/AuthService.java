@@ -3,6 +3,8 @@ package com.samterminal.backend.service;
 import com.samterminal.backend.dto.AuthRequest;
 import com.samterminal.backend.entity.*;
 import com.samterminal.backend.repository.*;
+import com.samterminal.backend.exception.ApiException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +26,12 @@ public class AuthService {
     private final LocationRepository locationRepository;
     private final ItemRepository itemRepository;
     private final MemoryRepository memoryRepository;
+    private final EmailVerificationService emailVerificationService;
 
     public AuthService(AppUserRepository userRepository, PasswordEncoder encoder, JwtService jwtService,
                        GameStateRepository gameStateRepository, LocationRepository locationRepository,
-                       ItemRepository itemRepository, MemoryRepository memoryRepository) {
+                       ItemRepository itemRepository, MemoryRepository memoryRepository,
+                       EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.encoder = encoder;
         this.jwtService = jwtService;
@@ -35,6 +39,7 @@ public class AuthService {
         this.locationRepository = locationRepository;
         this.itemRepository = itemRepository;
         this.memoryRepository = memoryRepository;
+        this.emailVerificationService = emailVerificationService;
     }
 
     public String login(AuthRequest request) {
@@ -47,10 +52,20 @@ public class AuthService {
     }
 
     @Transactional
-    public String register(AuthRequest request) {
+    public String register(AuthRequest request, String ip) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("User already exists");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "用户已存在");
         }
+        if (request.getEmailRequestId() == null || request.getEmailRequestId().isBlank()
+                || request.getEmailCode() == null || request.getEmailCode().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "邮箱验证码必填");
+        }
+        emailVerificationService.consumeForRegister(
+                request.getEmailRequestId(),
+                request.getEmail(),
+                request.getEmailCode(),
+                ip,
+                request.getUsername());
         AppUser user = AppUser.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())

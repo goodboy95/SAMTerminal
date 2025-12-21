@@ -23,3 +23,9 @@ app:
   admins: []
   llm:
     session-timeout-minutes: 30
+
+email:
+  altcha:
+    test-mode: true
+  encryption:
+    key-base64: dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleQ==

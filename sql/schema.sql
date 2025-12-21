@@ -164,3 +164,115 @@ CREATE TABLE IF NOT EXISTS user_location_unlock (
   CONSTRAINT fk_unlock_user FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_unlock_location FOREIGN KEY (location_id) REFERENCES location(id)
 );
+
+CREATE TABLE IF NOT EXISTS email_smtp_config (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100),
+  host VARCHAR(255) NOT NULL,
+  port INT NOT NULL,
+  username VARCHAR(255),
+  password_encrypted VARCHAR(2048),
+  from_address VARCHAR(255) NOT NULL,
+  use_tls TINYINT(1) DEFAULT 1,
+  use_ssl TINYINT(1) DEFAULT 0,
+  enabled TINYINT(1) DEFAULT 1,
+  max_per_minute INT,
+  max_per_day INT,
+  failure_count INT DEFAULT 0,
+  last_failure_at TIMESTAMP NULL,
+  last_success_at TIMESTAMP NULL,
+  circuit_opened_at TIMESTAMP NULL,
+  sent_minute_count INT DEFAULT 0,
+  sent_minute_window_start TIMESTAMP NULL,
+  sent_day_count INT DEFAULT 0,
+  sent_day_date DATE NULL,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_verification_request (
+  id VARCHAR(36) PRIMARY KEY,
+  username VARCHAR(100),
+  email VARCHAR(255),
+  ip VARCHAR(64),
+  code_hash VARCHAR(128),
+  status VARCHAR(30),
+  expires_at TIMESTAMP NULL,
+  resend_available_at TIMESTAMP NULL,
+  attempt_count INT DEFAULT 0,
+  verified_at TIMESTAMP NULL,
+  used_at TIMESTAMP NULL,
+  created_at TIMESTAMP NULL
+);
+CREATE INDEX idx_email_verification_email ON email_verification_request(email);
+
+CREATE TABLE IF NOT EXISTS email_send_log (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  request_id VARCHAR(36),
+  username VARCHAR(100),
+  email VARCHAR(255),
+  ip VARCHAR(64),
+  code_masked VARCHAR(32),
+  code_encrypted VARCHAR(2048),
+  status VARCHAR(20),
+  smtp_id BIGINT,
+  error_message VARCHAR(512),
+  sent_at TIMESTAMP NULL,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL
+);
+CREATE INDEX idx_email_send_log_sent_at ON email_send_log(sent_at, id);
+
+CREATE TABLE IF NOT EXISTS email_send_task (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  request_id VARCHAR(36),
+  username VARCHAR(100),
+  email VARCHAR(255),
+  ip VARCHAR(64),
+  code_encrypted VARCHAR(2048),
+  status VARCHAR(20),
+  attempt_count INT DEFAULT 0,
+  next_attempt_at TIMESTAMP NULL,
+  last_error VARCHAR(512),
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL
+);
+CREATE INDEX idx_email_send_task_status_time ON email_send_task(status, next_attempt_at);
+
+CREATE TABLE IF NOT EXISTS email_ip_stats_total (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  ip VARCHAR(64) UNIQUE,
+  requested_count INT DEFAULT 0,
+  unverified_count INT DEFAULT 0,
+  updated_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_ip_stats_daily (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  ip VARCHAR(64),
+  stats_date DATE,
+  requested_count INT DEFAULT 0,
+  unverified_count INT DEFAULT 0,
+  updated_at TIMESTAMP NULL,
+  UNIQUE (ip, stats_date)
+);
+CREATE INDEX idx_email_ip_stats_daily_date_unverified ON email_ip_stats_daily(stats_date, unverified_count);
+
+CREATE TABLE IF NOT EXISTS email_ip_ban (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  ip VARCHAR(64) UNIQUE,
+  type VARCHAR(20),
+  banned_until TIMESTAMP NULL,
+  reason VARCHAR(255),
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_send_log_audit (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  log_id BIGINT,
+  admin_username VARCHAR(100),
+  admin_ip VARCHAR(64),
+  action VARCHAR(50),
+  created_at TIMESTAMP NULL
+);

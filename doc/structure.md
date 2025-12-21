@@ -2,8 +2,12 @@
 
 - `frontend/`：React 18 + TypeScript + Vite 前端源代码。
   - `src/`：前端业务代码与组件（页面、UI 组件、hooks、lib 工具等）。
+    - `src/components/AltchaWidget.tsx`：ALTCHA Web Component 封装。
     - `src/lib/imageCache.ts`：图片预加载缓存工具。
     - `src/lib/__tests__/imageCache.test.ts`：图片缓存的单元测试。
+    - `src/pages/admin/EmailVerificationManager.tsx`：邮件验证管理后台页面。
+    - `src/pages/Index.tsx`：注册页（新增邮箱验证码与 ALTCHA 验证流程）。
+    - `src/types/altcha.d.ts`：ALTCHA 自定义元素类型声明。
   - `public/`：静态资源。
   - `nginx.conf`：前端容器的 SPA 路由回退配置。
   - `Dockerfile`：前端构建并由 Nginx 提供静态文件的镜像定义。
@@ -11,19 +15,58 @@
 - `backend/`：Spring Boot 3 后端服务源码。
   - `src/main/java/com/samterminal/backend/`：主业务代码、控制器、服务、实体、配置、DTO。
     - `config/AppProperties.java`：管理员账号与 LLM 相关配置载入。
+    - `config/ClockConfig.java`：全局 Clock Bean（用于时间相关测试）。
+    - `config/EmailVerificationProperties.java`：邮件验证码、ALTCHA、限流与 SMTP 配置项。
     - `config/LlmClientConfig.java`：LLM 请求 RestTemplate 超时配置。
     - `controller/ApiExceptionHandler.java`：统一参数校验错误返回。
+    - `controller/CaptchaController.java`：ALTCHA challenge/verify 代理接口。
+    - `controller/EmailVerificationController.java`：注册验证码发送/校验接口。
+    - `controller/AdminEmailVerificationController.java`：SMTP/日志/IP 统计与封禁管理接口。
     - `controller/WorldController.java`：世界地图与资源查询入口，初始化默认解锁地点。
     - `dto/LlmApiConfigRequest.java`：LLM API 池新增/更新请求体。
     - `dto/LlmApiConfigResponse.java`：LLM API 池列表响应体（含脱敏 apiKey）。
+    - `dto/EmailCodeSendRequest.java`：发送注册验证码请求体。
+    - `dto/EmailCodeSendResponse.java`：发送注册验证码响应体。
+    - `dto/EmailCodeVerifyRequest.java`：验证码预验证请求体。
+    - `dto/EmailCodeVerifyResponse.java`：验证码预验证响应体。
+    - `dto/EmailSendStatusResponse.java`：发送任务状态响应体。
+    - `dto/AltchaVerifyRequest.java`：ALTCHA payload 校验请求体。
+    - `dto/EmailSmtpConfigRequest.java`：SMTP 配置请求体。
+    - `dto/EmailSmtpConfigResponse.java`：SMTP 配置响应体（脱敏）。
+    - `dto/EmailSendLogResponse.java`：发送日志列表响应体。
+    - `dto/EmailLogDecryptResponse.java`：日志解密响应体。
+    - `dto/EmailIpStatsResponse.java`：IP 统计响应体。
+    - `dto/EmailIpBanRequest.java`：手动封禁请求体。
+    - `dto/EmailIpBanResponse.java`：封禁响应体。
+    - `dto/EmailSmtpTestRequest.java`：SMTP 测试发送请求体。
     - `dto/SessionResponse.java`：会话创建响应体。
     - `entity/LlmApiConfig.java`：LLM API 池配置实体。
     - `entity/LlmApiRole.java`：LLM API 主/备角色枚举。
     - `entity/LlmApiStatus.java`：LLM API 状态枚举。
+    - `entity/EmailSmtpConfig.java`：SMTP 配置实体。
+    - `entity/EmailVerificationRequest.java`：验证码请求实体。
+    - `entity/EmailVerificationRequestStatus.java`：验证码请求状态枚举。
+    - `entity/EmailSendLog.java`：发送日志实体（验证码加密存储）。
+    - `entity/EmailSendLogStatus.java`：发送日志状态枚举。
+    - `entity/EmailSendTask.java`：异步发送任务实体。
+    - `entity/EmailSendTaskStatus.java`：发送任务状态枚举。
+    - `entity/EmailIpStatsDaily.java`：IP 当日统计实体。
+    - `entity/EmailIpStatsTotal.java`：IP 累计统计实体。
+    - `entity/EmailIpBan.java`：IP 封禁实体。
+    - `entity/EmailIpBanType.java`：IP 封禁类型枚举。
+    - `entity/EmailSendLogAudit.java`：日志解密审计实体。
     - `entity/ChatSession.java`：会话绑定实体。
     - `entity/ChatSessionStatus.java`：会话状态枚举。
     - `repository/LlmApiConfigRepository.java`：LLM API 池配置仓库。
     - `repository/ChatSessionRepository.java`：会话仓库。
+    - `repository/EmailSmtpConfigRepository.java`：SMTP 配置仓库。
+    - `repository/EmailVerificationRequestRepository.java`：验证码请求仓库。
+    - `repository/EmailSendLogRepository.java`：发送日志仓库。
+    - `repository/EmailSendTaskRepository.java`：发送任务仓库。
+    - `repository/EmailIpStatsDailyRepository.java`：IP 当日统计仓库。
+    - `repository/EmailIpStatsTotalRepository.java`：IP 累计统计仓库。
+    - `repository/EmailIpBanRepository.java`：IP 封禁仓库。
+    - `repository/EmailSendLogAuditRepository.java`：日志审计仓库。
     - `service/GameService.java`：游戏状态与聊天流程、地点解锁与会话绑定主流程。
     - `service/UserLocationUnlockService.java`：地点解锁的幂等写入与重复插入保护。
     - `service/LlmPoolService.java`：API 选择、熔断、负载与健康检查。
@@ -33,7 +76,23 @@
     - `service/AdminAccountService.java`：基于配置的管理员账号同步。
     - `service/LlmSettingMigrationService.java`：旧 LlmSetting 迁移至 API 池。
     - `service/NoAvailableApiException.java`：API 池无可用配置异常。
+    - `service/AltchaService.java`：ALTCHA challenge/verify 代理调用。
+    - `service/EmailVerificationService.java`：验证码发送、验证与注册消费逻辑。
+    - `service/EmailSendTaskWorker.java`：异步发送任务调度。
+    - `service/EmailCryptoService.java`：验证码哈希与 AES-GCM 加密/解密。
+    - `service/EmailDomainPolicyService.java`：邮箱域名 allow/deny/disposable 过滤。
+    - `service/EmailIpStatsService.java`：IP 统计更新逻辑。
+    - `service/EmailIpStatsQueryService.java`：IP 统计分页/排序查询。
+    - `service/EmailIpBanService.java`：IP 封禁/解封逻辑。
+    - `service/EmailSendLogService.java`：发送日志与解密审计。
+    - `service/EmailSmtpConfigService.java`：SMTP 配置 CRUD。
+    - `service/EmailSender.java`：SMTP 发送抽象接口。
+    - `service/JavaMailEmailSender.java`：JavaMail SMTP 发送实现。
+    - `service/SmtpPoolService.java`：SMTP 随机选择、熔断与限额。
+    - `service/RateLimitService.java`：验证码相关接口限流。
+    - `service/RequestIpResolver.java`：可信代理 IP 解析工具。
   - `src/main/resources/application.yml`：后端运行配置。
+  - `src/main/resources/disposable-email-domains.txt`：一次性邮箱域名列表。
   - `src/test/java/com/samterminal/backend/GameServiceTest.java`：GameService 主流程的集成测试（H2）。
   - `src/test/java/com/samterminal/backend/GameServiceUnlockTest.java`：地点解锁相关逻辑测试。
   - `src/test/java/com/samterminal/backend/LlmPoolServiceTest.java`：LLM API 池选路/熔断相关测试。
@@ -41,6 +100,9 @@
   - `src/test/java/com/samterminal/backend/TokenUsageServiceTest.java`：Token 统计与限额相关测试。
   - `src/test/java/com/samterminal/backend/UserLocationUnlockServiceTest.java`：地点解锁幂等写入测试。
   - `src/test/java/com/samterminal/backend/service/AdminAccountServiceTest.java`：管理员账号同步逻辑的单元测试。
+  - `src/test/java/com/samterminal/backend/service/EmailVerificationServiceTest.java`：验证码发送/验证流程测试。
+  - `src/test/java/com/samterminal/backend/service/EmailIpBanServiceTest.java`：IP 封禁自动/手动逻辑测试。
+  - `src/test/java/com/samterminal/backend/service/SmtpPoolServiceTest.java`：SMTP 池故障切换测试。
   - `src/test/resources/application.yml`：测试环境配置（H2 内存库、JWT 测试密钥）。
   - `src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker`：Mockito 测试配置，使用 subclass mock maker 避免动态 agent 附加失败。
   - `pom.xml`：Maven 依赖与插件。
@@ -48,6 +110,9 @@
 - `doc/`：项目文档
   - `structure.md`：本文件，记录目录与作用。
   - `api/`：接口文档（见各 Controller 对应文件，如 admin/world/game/player/upload）。
+    - `api/captcha.md`：ALTCHA challenge/verify 接口说明。
+    - `api/email-verification.md`：注册邮箱验证码接口说明。
+    - `api/admin-email-verification.md`：邮件验证管理后台接口说明。
   - `captcha/`：注册邮件验证（ALTCHA + 邮件验证码）相关开发/安全/测试文档。
     - `captcha/README.md`：本目录索引与建议阅读顺序。
     - `captcha/development.md`：注册邮件验证功能的详细开发方案（前台、后台、后端、DB、接口建议）。
@@ -55,6 +120,7 @@
     - `captcha/security-performance.md`：安全与性能注意事项与建议默认参数。
     - `captcha/testing.md`：测试内容与方案（单测/集测/E2E 建议）。
   - `modules/`：模块设计与说明（含 LLM API 池模块说明）。
+    - `modules/email-verification.md`：邮件验证码模块说明。
   - `v1.0plus-plan.md`：基于设计稿与现有代码的功能缺口与开发方案清单。
   - `v0.2.0/`：V0.2.0 版本详细开发、测试与安全性能文档。
     - `development.md`：V0.2.0 开发方案与技术设计。

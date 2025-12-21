@@ -29,6 +29,7 @@ cors:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
+  trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1,::1}
   # 后台(/admin)管理员账号：支持配置多个，启动时会自动同步到数据库并赋予 ADMIN 角色。
   # 注意：此处为示例默认值，生产环境建议通过私有配置文件或环境变量覆盖。
   admins:
@@ -49,3 +50,40 @@ app:
 
 chroma:
   url: ${CHROMA_URL:http://localhost:8000}
+
+email:
+  code-ttl: 5m
+  resend-interval: 1m
+  max-verify-attempts: 5
+  auto-ban-threshold: 50
+  auto-ban-extra: 5m
+  rate-limit:
+    challenge-per-minute: 30
+    verify-per-minute: 30
+    send-per-minute: 10
+    verify-code-per-minute: 30
+  altcha:
+    sentinel-base-url: ${ALTCHA_SENTINEL_BASE_URL:}
+    api-key: ${ALTCHA_SENTINEL_API_KEY:}
+    test-mode: ${ALTCHA_TEST_MODE:false}
+    request-timeout-seconds: 5
+  domain-policy:
+    allowlist: ${EMAIL_DOMAIN_ALLOWLIST:}
+    denylist: ${EMAIL_DOMAIN_DENYLIST:}
+    disposable-list-path: ${EMAIL_DISPOSABLE_LIST_PATH:classpath:disposable-email-domains.txt}
+    enabled: ${EMAIL_DOMAIN_POLICY_ENABLED:true}
+  smtp:
+    failure-threshold: 3
+    circuit-open-minutes: 10
+    connect-timeout-seconds: 5
+    read-timeout-seconds: 10
+    max-attempts: 3
+  send-task:
+    batch-size: 10
+    max-attempts: 3
+    initial-backoff-seconds: 10
+    max-backoff-seconds: 300
+    worker-delay-seconds: 2
+  encryption:
+    key-base64: ${EMAIL_LOG_CODE_ENC_KEY_BASE64:}
+    code-hash-salt: ${EMAIL_CODE_HASH_SALT:}

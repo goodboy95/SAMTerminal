@@ -8,5 +8,6 @@
 
 ## POST /api/auth/register
 - 描述：注册新用户，初始化游戏状态、默认背包与记忆。
-- 请求体：`{ "username": string, "email": string, "password": string }`
+- 请求体：`{ "username": string, "email": string, "password": string, "emailCode": string, "emailRequestId": string }`
 - 响应：同登录。
+- 备注：必须先完成邮箱验证码校验。

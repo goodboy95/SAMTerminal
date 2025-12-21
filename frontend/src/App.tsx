@@ -15,6 +15,7 @@ import LocationManager from "./pages/admin/LocationManager";
 import CharacterManager from "./pages/admin/CharacterManager";
 import LLMSettings from "./pages/admin/LLMSettings";
 import UserMonitor from "./pages/admin/UserMonitor";
+import EmailVerificationManager from "./pages/admin/EmailVerificationManager";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="characters" element={<CharacterManager />} />
             <Route path="monitor" element={<UserMonitor />} />
             <Route path="settings" element={<LLMSettings />} />
+            <Route path="email-verification" element={<EmailVerificationManager />} />
           </Route>
 
           {/* 404 */}
