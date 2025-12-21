@@ -89,6 +89,39 @@ CREATE TABLE IF NOT EXISTS llm_setting (
   temperature DOUBLE
 );
 
+CREATE TABLE IF NOT EXISTS llm_api_config (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100),
+  base_url VARCHAR(255) NOT NULL,
+  api_key VARCHAR(255),
+  model_name VARCHAR(100) NOT NULL,
+  temperature DOUBLE,
+  role VARCHAR(20) DEFAULT 'PRIMARY',
+  token_limit BIGINT,
+  token_used BIGINT DEFAULT 0,
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  failure_count INT DEFAULT 0,
+  last_failure_at TIMESTAMP NULL,
+  last_success_at TIMESTAMP NULL,
+  circuit_opened_at TIMESTAMP NULL,
+  max_load INT DEFAULT 30,
+  version BIGINT DEFAULT 0,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_session (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  session_id VARCHAR(64) UNIQUE NOT NULL,
+  user_id BIGINT,
+  active_api_id BIGINT,
+  created_at TIMESTAMP,
+  last_active_at TIMESTAMP,
+  status VARCHAR(20) DEFAULT 'ACTIVE',
+  CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_session_api FOREIGN KEY (active_api_id) REFERENCES llm_api_config(id)
+);
+
 CREATE TABLE IF NOT EXISTS chat_message (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   sender VARCHAR(50),

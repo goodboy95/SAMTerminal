@@ -26,16 +26,23 @@ public class GameService {
     private final MemoryRepository memoryRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final LlmSettingRepository llmSettingRepository;
+    private final LlmApiConfigRepository llmApiConfigRepository;
     private final UserLocationUnlockRepository unlockRepository;
     private final TokenUsageService tokenUsageService;
     private final LlmService llmService;
+    private final LlmPoolService llmPoolService;
+    private final SessionService sessionService;
     private final MemoryRagService memoryRagService;
+    private final UserLocationUnlockService unlockService;
 
     public GameService(AppUserRepository userRepository, GameStateRepository stateRepository,
                        LocationRepository locationRepository, ItemRepository itemRepository,
                        MemoryRepository memoryRepository, ChatMessageRepository chatMessageRepository,
-                       LlmSettingRepository llmSettingRepository, UserLocationUnlockRepository unlockRepository,
-                       TokenUsageService tokenUsageService, LlmService llmService, MemoryRagService memoryRagService) {
+                       LlmSettingRepository llmSettingRepository, LlmApiConfigRepository llmApiConfigRepository,
+                       UserLocationUnlockRepository unlockRepository,
+                       TokenUsageService tokenUsageService, LlmService llmService,
+                       LlmPoolService llmPoolService, SessionService sessionService,
+                       MemoryRagService memoryRagService, UserLocationUnlockService unlockService) {
         this.userRepository = userRepository;
         this.stateRepository = stateRepository;
         this.locationRepository = locationRepository;
@@ -43,10 +50,14 @@ public class GameService {
         this.memoryRepository = memoryRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.llmSettingRepository = llmSettingRepository;
+        this.llmApiConfigRepository = llmApiConfigRepository;
         this.unlockRepository = unlockRepository;
         this.tokenUsageService = tokenUsageService;
         this.llmService = llmService;
+        this.llmPoolService = llmPoolService;
+        this.sessionService = sessionService;
         this.memoryRagService = memoryRagService;
+        this.unlockService = unlockService;
     }
 
     public AppUser getOrCreateUser(String username) {
@@ -95,9 +106,10 @@ public class GameService {
     }
 
     @Transactional
-    public ChatResponse handleChat(String username, String userMessage) {
+    public ChatResponse handleChat(String username, String userMessage, String sessionId) {
         AppUser user = getOrCreateUser(username);
         GameState state = stateRepository.findByUser(user).orElseGet(() -> initDefaultState(user));
+        ChatSession session = sessionService.resolveSession(user, sessionId);
 
         long estimatedInputTokens = TokenEstimator.estimateTokens(userMessage);
         if (tokenUsageService.wouldExceedLimit(user, estimatedInputTokens, 0)) {
@@ -113,7 +125,8 @@ public class GameService {
                             String.valueOf(blocked.getId()), blocked.getSender(), blocked.getNpcName(),
                             blocked.getContent(), blocked.getNarration(), blocked.getTimestamp().toString())),
                     toDto(state, user),
-                    null
+                    null,
+                    session.getSessionId()
             );
         }
 
@@ -124,10 +137,30 @@ public class GameService {
                 .timestamp(Instant.now())
                 .build());
 
-        LlmService.LlmReply llmReply = generateLlmReply(state, user, userMessage);
+        LlmPoolService.LlmCallResult llmResult = null;
+        try {
+            llmResult = generateLlmReply(state, user, userMessage, session);
+        } catch (NoAvailableApiException ex) {
+            ChatMessage reply = ChatMessage.builder()
+                    .user(user)
+                    .sender("firefly")
+                    .content("当前模型不可用，请稍后再试。")
+                    .timestamp(Instant.now())
+                    .build();
+            chatMessageRepository.save(reply);
+            return new ChatResponse(
+                    List.of(new com.samterminal.backend.dto.ChatMessageDto(
+                            String.valueOf(reply.getId()), reply.getSender(), reply.getNpcName(),
+                            reply.getContent(), reply.getNarration(), reply.getTimestamp().toString())),
+                    toDto(state, user),
+                    null,
+                    session.getSessionId()
+            );
+        }
         List<ChatMessage> replyEntities;
         com.samterminal.backend.dto.StateUpdateDto stateUpdate = null;
 
+        LlmService.LlmReply llmReply = llmResult != null ? llmResult.reply() : null;
         if (llmReply == null) {
             var result = simulateReply(userMessage.toLowerCase(), state, user);
             replyEntities = result.messages().stream().map(msg -> ChatMessage.builder()
@@ -166,14 +199,16 @@ public class GameService {
                         String.valueOf(m.getId()), m.getSender(), m.getNpcName(), m.getContent(), m.getNarration(), m.getTimestamp().toString())
                 ).toList(),
                 toDto(state, user),
-                stateUpdate
+                stateUpdate,
+                session.getSessionId()
         );
     }
 
     @Transactional
-    public ChatResponse recallMemory(String username, Long memoryId) {
+    public ChatResponse recallMemory(String username, Long memoryId, String sessionId) {
         AppUser user = getOrCreateUser(username);
         GameState state = stateRepository.findByUser(user).orElseGet(() -> initDefaultState(user));
+        ChatSession session = sessionService.resolveSession(user, sessionId);
         Memory memory = memoryRepository.findById(memoryId).orElse(null);
         if (memory == null || memory.getUser() == null || !memory.getUser().getId().equals(user.getId())) {
             ChatMessage reply = ChatMessage.builder()
@@ -188,7 +223,8 @@ public class GameService {
                             String.valueOf(reply.getId()), reply.getSender(), reply.getNpcName(),
                             reply.getContent(), reply.getNarration(), reply.getTimestamp().toString())),
                     toDto(state, user),
-                    null
+                    null,
+                    session.getSessionId()
             );
         }
         String recallPrompt = """
@@ -211,14 +247,39 @@ public class GameService {
                             String.valueOf(reply.getId()), reply.getSender(), reply.getNpcName(),
                             reply.getContent(), reply.getNarration(), reply.getTimestamp().toString())),
                     toDto(state, user),
-                    null
+                    null,
+                    session.getSessionId()
             );
         }
-        LlmService.LlmReply reply = llmService.callLlm(
-                llmSettingRepository.findAll().stream().findFirst().orElse(null),
-                buildSystemPrompt(),
-                recallPrompt
-        );
+        LlmService.LlmReply reply = null;
+        if (llmApiConfigRepository.count() > 0) {
+            try {
+                LlmPoolService.LlmCallResult result = llmPoolService.callWithSession(session, buildSystemPrompt(), recallPrompt);
+                reply = result.reply();
+            } catch (NoAvailableApiException ex) {
+                ChatMessage unavailable = ChatMessage.builder()
+                        .user(user)
+                        .sender("firefly")
+                        .content("当前模型不可用，请稍后再试。")
+                        .timestamp(Instant.now())
+                        .build();
+                chatMessageRepository.save(unavailable);
+                return new ChatResponse(
+                        List.of(new com.samterminal.backend.dto.ChatMessageDto(
+                                String.valueOf(unavailable.getId()), unavailable.getSender(), unavailable.getNpcName(),
+                                unavailable.getContent(), unavailable.getNarration(), unavailable.getTimestamp().toString())),
+                        toDto(state, user),
+                        null,
+                        session.getSessionId()
+                );
+            }
+        } else {
+            reply = llmService.callLlm(
+                    llmSettingRepository.findAll().stream().findFirst().orElse(null),
+                    buildSystemPrompt(),
+                    recallPrompt
+            );
+        }
         String content = reply != null && reply.content() != null ? reply.content()
                 : "我记得那天的细节依然很清晰：" + memory.getContent();
         String narration = reply != null ? reply.narration() : null;
@@ -238,7 +299,8 @@ public class GameService {
                         String.valueOf(message.getId()), message.getSender(), message.getNpcName(),
                         message.getContent(), message.getNarration(), message.getTimestamp().toString())),
                 toDto(state, user),
-                null
+                null,
+                session.getSessionId()
         );
     }
 
@@ -264,16 +326,20 @@ public class GameService {
     private record SimResult(List<TempMessage> messages, Map<String, Object> newState) {}
     private record TempMessage(String sender, String npcName, String content, String narration, Instant timestamp) {}
 
-    private LlmService.LlmReply generateLlmReply(GameState state, AppUser user, String userMessage) {
-        LlmSetting setting = llmSettingRepository.findAll().stream().findFirst().orElse(null);
-        if (setting == null) {
-            return null;
-        }
+    private LlmPoolService.LlmCallResult generateLlmReply(GameState state, AppUser user, String userMessage, ChatSession session) {
         List<Memory> memories = memoryRepository.findByUser(user);
         List<Memory> relevant = memoryRagService.queryRelevantMemories(memories, userMessage, 3);
         String systemPrompt = buildSystemPrompt();
         String userPrompt = buildUserPrompt(state, user, userMessage, relevant);
-        return llmService.callLlm(setting, systemPrompt, userPrompt);
+        if (llmApiConfigRepository.count() > 0) {
+            return llmPoolService.callWithSession(session, systemPrompt, userPrompt);
+        }
+        LlmService.LlmReply reply = llmService.callLlm(
+                llmSettingRepository.findAll().stream().findFirst().orElse(null),
+                systemPrompt,
+                userPrompt
+        );
+        return reply != null ? new LlmPoolService.LlmCallResult(reply, null) : null;
     }
 
     private String buildSystemPrompt() {
@@ -485,12 +551,7 @@ public class GameService {
     }
 
     private void ensureUnlocked(AppUser user, Location location) {
-        unlockRepository.findFirstByUserAndLocation(user, location)
-                .orElseGet(() -> unlockRepository.save(UserLocationUnlock.builder()
-                        .user(user)
-                        .location(location)
-                        .unlockedAt(Instant.now())
-                        .build()));
+        unlockService.ensureUnlocked(user, location);
     }
 
     private long estimateMessagesTokens(List<TempMessage> messages) {

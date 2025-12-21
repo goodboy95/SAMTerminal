@@ -57,7 +57,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(Arrays.asList(System.getenv().getOrDefault("CORS_ORIGINS", "http://samproject.seekerhut.com,http://localhost:5173,http://localhost:4173").split(",")));
+        config.setAllowedOrigins(Arrays.asList(System.getenv().getOrDefault("CORS_ORIGINS", "http://samproject.seekerhut.com,http://samproject.seekerhut.com:8090,http://localhost:5173,http://localhost:4173").split(",")));
         config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("Authorization","Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

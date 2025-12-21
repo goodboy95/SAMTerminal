@@ -2,10 +2,11 @@ package com.samterminal.backend.config;
 
 import com.samterminal.backend.entity.*;
 import com.samterminal.backend.repository.*;
+import com.samterminal.backend.service.AdminAccountService;
+import com.samterminal.backend.service.LlmSettingMigrationService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
@@ -14,9 +15,11 @@ public class DataInitializer {
 
     @Bean
     CommandLineRunner init(StarDomainRepository domainRepo, LocationRepository locationRepo,
-                           AppUserRepository userRepo, PasswordEncoder encoder,
+                           AppUserRepository userRepo,
                            GameStateRepository stateRepo, ItemRepository itemRepo,
-                           MemoryRepository memoryRepo, NpcCharacterRepository characterRepository) {
+                           MemoryRepository memoryRepo, NpcCharacterRepository characterRepository,
+                           AdminAccountService adminAccountService,
+                           LlmSettingMigrationService migrationService) {
         return args -> {
             if (domainRepo.count() == 0) {
                 StarDomain penacony = domainRepo.save(StarDomain.builder().code("penacony").name("匹诺康尼").description("盛会之星，美梦的国度。").coordX(70).coordY(50).color("text-purple-400").build());
@@ -35,14 +38,8 @@ public class DataInitializer {
                 ));
             }
 
-            if (userRepo.findByUsername("admin").isEmpty()) {
-                userRepo.save(AppUser.builder()
-                        .username("admin")
-                        .email("admin@example.com")
-                        .password(encoder.encode("admin123"))
-                        .role(UserRole.ADMIN)
-                        .build());
-            }
+            adminAccountService.syncAdmins();
+            migrationService.migrateIfNeeded();
 
             if (characterRepository.count() == 0) {
                 characterRepository.save(NpcCharacter.builder().name("花火").prompt("淘气的愚者，喜欢恶作剧。")

@@ -7,6 +7,7 @@ import com.samterminal.backend.entity.UserRole;
 import com.samterminal.backend.repository.AppUserRepository;
 import com.samterminal.backend.service.AdminService;
 import com.samterminal.backend.service.AuthService;
+import com.samterminal.backend.service.LlmApiConfigService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,11 +21,14 @@ public class AdminController {
     private final AdminService adminService;
     private final AuthService authService;
     private final AppUserRepository userRepository;
+    private final LlmApiConfigService llmApiConfigService;
 
-    public AdminController(AdminService adminService, AuthService authService, AppUserRepository userRepository) {
+    public AdminController(AdminService adminService, AuthService authService, AppUserRepository userRepository,
+                           LlmApiConfigService llmApiConfigService) {
         this.adminService = adminService;
         this.authService = authService;
         this.userRepository = userRepository;
+        this.llmApiConfigService = llmApiConfigService;
     }
 
     @PostMapping("/login")
@@ -133,6 +137,38 @@ public class AdminController {
     @PostMapping("/system/llm/test")
     public ResponseEntity<?> testLlm() {
         return ResponseEntity.ok(Map.of("status", "connected"));
+    }
+
+    @GetMapping("/system/llm-apis")
+    public ResponseEntity<?> listLlmApis() {
+        return ResponseEntity.ok(llmApiConfigService.listConfigs());
+    }
+
+    @PostMapping("/system/llm-apis")
+    public ResponseEntity<?> createLlmApi(@RequestBody LlmApiConfigRequest request) {
+        return ResponseEntity.ok(llmApiConfigService.createConfig(request));
+    }
+
+    @PutMapping("/system/llm-apis/{id}")
+    public ResponseEntity<?> updateLlmApi(@PathVariable Long id, @RequestBody LlmApiConfigRequest request) {
+        return ResponseEntity.ok(llmApiConfigService.updateConfig(id, request));
+    }
+
+    @DeleteMapping("/system/llm-apis/{id}")
+    public ResponseEntity<?> deleteLlmApi(@PathVariable Long id) {
+        llmApiConfigService.deleteConfig(id);
+        return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
+    @PostMapping("/system/llm-apis/{id}/reset-tokens")
+    public ResponseEntity<?> resetTokens(@PathVariable Long id) {
+        return ResponseEntity.ok(llmApiConfigService.resetTokens(id));
+    }
+
+    @PostMapping("/system/llm-apis/{id}/test")
+    public ResponseEntity<?> testLlmApi(@PathVariable Long id) {
+        boolean ok = llmApiConfigService.testConfig(id);
+        return ResponseEntity.ok(Map.of("status", ok ? "connected" : "failed"));
     }
 
     @GetMapping("/users/usage")

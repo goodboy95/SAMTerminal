@@ -22,6 +22,7 @@ public class AdminService {
     private final LocationRepository locationRepository;
     private final StarDomainRepository domainRepository;
     private final LlmSettingRepository llmSettingRepository;
+    private final LlmApiConfigRepository llmApiConfigRepository;
     private final AppUserRepository userRepository;
     private final TokenUsageService tokenUsageService;
     private final UserTokenUsageRepository usageRepository;
@@ -29,7 +30,8 @@ public class AdminService {
 
     public AdminService(FireflyAssetRepository assetRepository, NpcCharacterRepository characterRepository,
                         LocationRepository locationRepository, StarDomainRepository domainRepository,
-                        LlmSettingRepository llmSettingRepository, AppUserRepository userRepository,
+                        LlmSettingRepository llmSettingRepository, LlmApiConfigRepository llmApiConfigRepository,
+                        AppUserRepository userRepository,
                         TokenUsageService tokenUsageService, UserTokenUsageRepository usageRepository,
                         UserTokenLimitRepository limitRepository) {
         this.assetRepository = assetRepository;
@@ -37,6 +39,7 @@ public class AdminService {
         this.locationRepository = locationRepository;
         this.domainRepository = domainRepository;
         this.llmSettingRepository = llmSettingRepository;
+        this.llmApiConfigRepository = llmApiConfigRepository;
         this.userRepository = userRepository;
         this.tokenUsageService = tokenUsageService;
         this.usageRepository = usageRepository;
@@ -157,12 +160,46 @@ public class AdminService {
         if (setting.getId() == null && llmSettingRepository.count() > 0) {
             setting.setId(llmSettingRepository.findAll().get(0).getId());
         }
-        return llmSettingRepository.save(setting);
+        LlmSetting saved = llmSettingRepository.save(setting);
+        syncToApiConfig(saved);
+        return saved;
     }
 
     @Transactional(readOnly = true)
     public LlmSetting getLlm() {
         return llmSettingRepository.findAll().stream().findFirst().orElse(null);
+    }
+
+    private void syncToApiConfig(LlmSetting setting) {
+        if (setting == null || setting.getBaseUrl() == null || setting.getModelName() == null) {
+            return;
+        }
+        LlmApiConfig config = llmApiConfigRepository.findAll().stream()
+                .findFirst()
+                .orElseGet(LlmApiConfig::new);
+        config.setName(config.getName() != null ? config.getName() : "Migrated LLM");
+        config.setBaseUrl(setting.getBaseUrl());
+        if (setting.getApiKey() != null) {
+            config.setApiKey(setting.getApiKey());
+        }
+        config.setModelName(setting.getModelName());
+        config.setTemperature(setting.getTemperature());
+        if (config.getRole() == null) {
+            config.setRole(LlmApiRole.PRIMARY);
+        }
+        if (config.getStatus() == null) {
+            config.setStatus(LlmApiStatus.ACTIVE);
+        }
+        if (config.getTokenUsed() == null) {
+            config.setTokenUsed(0L);
+        }
+        if (config.getFailureCount() == null) {
+            config.setFailureCount(0);
+        }
+        if (config.getMaxLoad() == null) {
+            config.setMaxLoad(30);
+        }
+        llmApiConfigRepository.save(config);
     }
 
     @Transactional

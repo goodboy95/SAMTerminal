@@ -11,6 +11,7 @@ import com.samterminal.backend.repository.LocationRepository;
 import com.samterminal.backend.repository.StarDomainRepository;
 import com.samterminal.backend.repository.UserLocationUnlockRepository;
 import com.samterminal.backend.service.JwtService;
+import com.samterminal.backend.service.UserLocationUnlockService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,16 +32,19 @@ public class WorldController {
     private final UserLocationUnlockRepository unlockRepository;
     private final AppUserRepository userRepository;
     private final FireflyAssetRepository assetRepository;
+    private final UserLocationUnlockService unlockService;
 
     public WorldController(StarDomainRepository domainRepository, LocationRepository locationRepository,
                            JwtService jwtService, UserLocationUnlockRepository unlockRepository,
-                           AppUserRepository userRepository, FireflyAssetRepository assetRepository) {
+                           AppUserRepository userRepository, FireflyAssetRepository assetRepository,
+                           UserLocationUnlockService unlockService) {
         this.domainRepository = domainRepository;
         this.locationRepository = locationRepository;
         this.jwtService = jwtService;
         this.unlockRepository = unlockRepository;
         this.userRepository = userRepository;
         this.assetRepository = assetRepository;
+        this.unlockService = unlockService;
     }
 
     @GetMapping("/map")
@@ -93,12 +97,7 @@ public class WorldController {
                 .filter(Location::isUnlocked)
                 .toList();
         for (Location location : defaults) {
-            unlockRepository.findFirstByUserAndLocation(user, location)
-                    .orElseGet(() -> unlockRepository.save(com.samterminal.backend.entity.UserLocationUnlock.builder()
-                            .user(user)
-                            .location(location)
-                            .unlockedAt(java.time.Instant.now())
-                            .build()));
+            unlockService.ensureUnlocked(user, location);
         }
     }
 }

@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Emotion } from '@/lib/simulation';
+import { preloadImage } from '@/lib/imageCache';
 import { cn } from '@/lib/utils';
 
 interface CharacterLayerProps {
@@ -7,6 +9,12 @@ interface CharacterLayerProps {
 }
 
 export const CharacterLayer = ({ emotion, assetUrl }: CharacterLayerProps) => {
+  useEffect(() => {
+    if (assetUrl) {
+      preloadImage(assetUrl).catch(() => undefined);
+    }
+  }, [assetUrl]);
+
   // 模拟立绘资源映射
   // 实际开发中，这里应该是真实的图片路径，如 '/assets/firefly_smile.png'
   const getEmojiForEmotion = (e: Emotion) => {

@@ -1,6 +1,6 @@
 import { GameState, Item, Memory, Location, StarDomain, Message, FireflyAsset } from './simulation';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://samproject.seekerhut.com:8081';
 
 const jsonHeaders = (token?: string) => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -55,11 +55,11 @@ export const api = {
     const data = await res.json();
     return mapState(data);
   },
-  async chat(content: string, token?: string): Promise<{ replies: Message[]; state: GameState; stateUpdate?: any }> {
+  async chat(content: string, token?: string, sessionId?: string): Promise<{ replies: Message[]; state: GameState; stateUpdate?: any; sessionId?: string }> {
     const res = await fetch(`${API_BASE}/api/game/chat`, {
       method: 'POST',
       headers: jsonHeaders(token),
-      body: JSON.stringify({ message: content })
+      body: JSON.stringify({ message: content, sessionId })
     });
     if (!res.ok) throw new Error('发送失败');
     const data = await res.json();
@@ -71,7 +71,15 @@ export const api = {
       narration: m.narration,
       timestamp: new Date(m.timestamp)
     }));
-    return { replies, state: mapState(data.state), stateUpdate: data.stateUpdate };
+    return { replies, state: mapState(data.state), stateUpdate: data.stateUpdate, sessionId: data.sessionId };
+  },
+  async createSession(token?: string) {
+    const res = await fetch(`${API_BASE}/api/game/session`, {
+      method: 'POST',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('创建会话失败');
+    return res.json();
   },
   async map(token?: string): Promise<{ domains: Record<string, StarDomain>; locations: Record<string, Location> }> {
     const res = await fetch(`${API_BASE}/api/world/map`, { headers: jsonHeaders(token) });
@@ -244,6 +252,53 @@ export const api = {
     if (!res.ok) throw new Error('测试失败');
     return res.json();
   },
+  async adminLlmApis(token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/system/llm-apis`, { headers: jsonHeaders(token) });
+    if (!res.ok) throw new Error('获取 API 池失败');
+    return res.json();
+  },
+  async adminCreateLlmApi(payload: any, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/system/llm-apis`, {
+      method: 'POST',
+      headers: jsonHeaders(token),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('创建失败');
+    return res.json();
+  },
+  async adminUpdateLlmApi(id: number, payload: any, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/system/llm-apis/${id}`, {
+      method: 'PUT',
+      headers: jsonHeaders(token),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('更新失败');
+    return res.json();
+  },
+  async adminDeleteLlmApi(id: number, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/system/llm-apis/${id}`, {
+      method: 'DELETE',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('删除失败');
+    return res.json();
+  },
+  async adminResetLlmTokens(id: number, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/system/llm-apis/${id}/reset-tokens`, {
+      method: 'POST',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('重置失败');
+    return res.json();
+  },
+  async adminTestLlmApi(id: number, token?: string) {
+    const res = await fetch(`${API_BASE}/api/admin/system/llm-apis/${id}/test`, {
+      method: 'POST',
+      headers: jsonHeaders(token)
+    });
+    if (!res.ok) throw new Error('测试失败');
+    return res.json();
+  },
   async adminUsage(token?: string): Promise<any> {
     const res = await fetch(`${API_BASE}/api/admin/users/usage`, { headers: jsonHeaders(token) });
     if (!res.ok) throw new Error('获取用量失败');
@@ -284,11 +339,11 @@ export const api = {
     }
     return data;
   },
-  async recallMemory(memoryId: string, token?: string) {
+  async recallMemory(memoryId: string, token?: string, sessionId?: string) {
     const res = await fetch(`${API_BASE}/api/game/memory/recall`, {
       method: 'POST',
       headers: jsonHeaders(token),
-      body: JSON.stringify({ memoryId })
+      body: JSON.stringify({ memoryId, sessionId })
     });
     if (!res.ok) throw new Error('回忆失败');
     return res.json();

@@ -29,6 +29,15 @@ cors:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
+  admins: []
+  llm:
+    min-remaining-tokens: ${APP_LLM_MIN_REMAINING_TOKENS:2000}
+    min-remaining-percent: ${APP_LLM_MIN_REMAINING_PERCENT:5}
+    session-timeout-minutes: ${APP_LLM_SESSION_TIMEOUT_MINUTES:30}
+    request-timeout-seconds: ${APP_LLM_REQUEST_TIMEOUT_SECONDS:20}
+    circuit-breaker:
+      failure-threshold: ${APP_LLM_FAILURE_THRESHOLD:3}
+      probe-interval-minutes: ${APP_LLM_PROBE_INTERVAL_MINUTES:10}
 
 chroma:
   url: ${CHROMA_URL:http://localhost:8000}

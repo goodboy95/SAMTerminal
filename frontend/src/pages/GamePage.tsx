@@ -9,6 +9,7 @@ import { GameMenu } from '@/components/game/GameMenu';
 import { GameState, Message, Location, StarDomain, INITIAL_STATE } from '@/lib/simulation';
 import { api, API_BASE } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { preloadImage } from '@/lib/imageCache';
 
 const GamePage = () => {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
@@ -17,6 +18,7 @@ const GamePage = () => {
   const [domains, setDomains] = useState<Record<string, StarDomain>>({});
   const [locations, setLocations] = useState<Record<string, Location>>(INITIAL_STATE ? { [INITIAL_STATE.currentLocation.id]: INITIAL_STATE.currentLocation } : {});
   const [fireflyAssets, setFireflyAssets] = useState<Record<string, string>>({});
+  const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem('sam_session_id'));
   
   // UI 状态
   const [showMap, setShowMap] = useState(false);
@@ -61,22 +63,34 @@ const GamePage = () => {
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem('sam_token') || undefined;
+    if (!sessionId && token) {
+      api.createSession(token)
+        .then((data) => {
+          if (data?.sessionId) {
+            localStorage.setItem('sam_session_id', data.sessionId);
+            setSessionId(data.sessionId);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
     setGameState(prev => applyLocation(prev));
   }, [locations]);
 
   useEffect(() => {
     Object.values(locations).forEach((loc) => {
       if (loc.backgroundUrl) {
-        const img = new Image();
-        img.src = loc.backgroundUrl;
+        preloadImage(loc.backgroundUrl).catch(() => undefined);
       }
     });
   }, [locations]);
 
   useEffect(() => {
     Object.values(fireflyAssets).forEach((url) => {
-      const img = new Image();
-      img.src = url;
+      preloadImage(url).catch(() => undefined);
     });
   }, [fireflyAssets]);
 
@@ -104,7 +118,11 @@ const GamePage = () => {
 
     try {
       const token = localStorage.getItem('sam_token') || undefined;
-      const { replies, state, stateUpdate } = await api.chat(content, token);
+      const { replies, state, stateUpdate, sessionId: newSessionId } = await api.chat(content, token, sessionId || undefined);
+      if (newSessionId && newSessionId !== sessionId) {
+        localStorage.setItem('sam_session_id', newSessionId);
+        setSessionId(newSessionId);
+      }
       if (stateUpdate?.location?.id && stateUpdate.location.backgroundUrl) {
         const normalized = stateUpdate.location.backgroundUrl.startsWith('http')
           ? stateUpdate.location.backgroundUrl
@@ -130,7 +148,11 @@ const GamePage = () => {
     setIsTyping(true);
     try {
       const token = localStorage.getItem('sam_token') || undefined;
-      const data = await api.recallMemory(memoryId, token);
+      const data = await api.recallMemory(memoryId, token, sessionId || undefined);
+      if (data?.sessionId && data.sessionId !== sessionId) {
+        localStorage.setItem('sam_session_id', data.sessionId);
+        setSessionId(data.sessionId);
+      }
       const replies: Message[] = (data.messages || []).map((m: any) => ({
         id: m.id,
         sender: m.sender,

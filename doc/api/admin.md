@@ -26,10 +26,19 @@
 - **POST /api/admin/world/characters/batch**：批量导入角色（JSON 数组）。
 - **DELETE /api/admin/world/characters/{id}**：删除角色。
 
-## LLM 设置
+## LLM 设置（兼容旧接口）
 - **GET /api/admin/system/llm**：读取模型连接信息（返回 baseUrl, modelName, temperature）。
 - **POST /api/admin/system/llm**：保存模型连接参数（baseUrl, apiKey, modelName, temperature）。
 - **POST /api/admin/system/llm/test**：测试连接（返回 `{status:"connected"}`）。
+
+## LLM API 池管理
+- **GET /api/admin/system/llm-apis**：获取 API 池列表（apiKey 返回脱敏，附带 currentLoad）。
+- **POST /api/admin/system/llm-apis**：新增 API 配置。
+  - 请求体：`{ name, baseUrl, apiKey, modelName, temperature, role, tokenLimit, maxLoad, status }`
+- **PUT /api/admin/system/llm-apis/{id}**：更新 API 配置（apiKey 留空则保持不变）。
+- **DELETE /api/admin/system/llm-apis/{id}**：删除 API 配置。
+- **POST /api/admin/system/llm-apis/{id}/reset-tokens**：重置 tokenUsed 与 failureCount。
+- **POST /api/admin/system/llm-apis/{id}/test**：测试 API 连通性（返回 `{status: "connected" | "failed"}`）。
 
 ## Token 监测
 - **GET /api/admin/users/usage**：获取用户 Token 统计与限额。

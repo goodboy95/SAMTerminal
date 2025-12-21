@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MemoryRecallRequest {
     private Long memoryId;
+    private String sessionId;
 }

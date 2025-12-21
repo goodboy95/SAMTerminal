@@ -13,4 +13,5 @@ public class ChatResponse {
     private List<ChatMessageDto> messages;
     private GameStateDto state;
     private StateUpdateDto stateUpdate;
+    private String sessionId;
 }

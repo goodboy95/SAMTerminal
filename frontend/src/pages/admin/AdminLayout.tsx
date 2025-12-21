@@ -34,7 +34,7 @@ const AdminLayout = () => {
     { path: '/admin/dashboard/locations', label: '区域与星球', icon: MapIcon },
     { path: '/admin/dashboard/characters', label: '角色档案', icon: Users },
     { path: '/admin/dashboard/monitor', label: '用户 Token 监测', icon: Activity },
-    { path: '/admin/dashboard/settings', label: '模型设置', icon: Settings },
+    { path: '/admin/dashboard/settings', label: 'LLM API 池', icon: Settings },
   ];
 
   return (
