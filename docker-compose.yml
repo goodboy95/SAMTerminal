@@ -16,13 +16,15 @@ services:
       retries: 5
 
   backend:
-    build: ./backend
+    image: eclipse-temurin:25-jre
     container_name: sam_backend
     restart: unless-stopped
+    working_dir: /app
+    command: ["java", "-jar", "/app/app.jar"]
     depends_on:
       mysql:
         condition: service_healthy
-      altcha_sentinel:
+      cap:
         condition: service_started
     environment:
       DB_URL: jdbc:mysql://mysql:3306/sam?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -32,42 +34,54 @@ services:
       JWT_SECRET: devsecretkeysamterminal1234567890abcd
       CHROMA_URL: http://chromadb:8000
       UPLOAD_DIR: /data/uploads
-      ALTCHA_SENTINEL_BASE_URL: http://altcha_sentinel:8080
-      ALTCHA_TEST_MODE: ${ALTCHA_TEST_MODE:-true}
+      CAP_BASE_URL: http://cap:3000
+      CAP_SITE_KEY: ${CAP_SITE_KEY:-}
+      CAP_SITE_SECRET: ${CAP_SITE_SECRET:-}
+      CAP_TEST_MODE: ${CAP_TEST_MODE:-false}
     ports:
       - "8081:8080"
     volumes:
+      - ./backend/target/app.jar:/app/app.jar:ro
       - uploads_data:/data/uploads
 
   frontend:
-    build: ./frontend
+    image: nginx:1.27-alpine
     container_name: sam_frontend
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      - NODE_ENV=production
     ports:
       - "8090:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
   chromadb:
     image: chromadb/chroma:latest
     container_name: sam_chroma
     restart: unless-stopped
 
-  altcha_sentinel:
-    image: ghcr.io/altcha-org/sentinel:latest
-    container_name: sam_altcha_sentinel
+  cap:
+    image: tiago2/cap:latest
+    container_name: sam_cap
     restart: unless-stopped
+    environment:
+      ADMIN_KEY: ${CAP_ADMIN_KEY:-cap-admin-key-change-me-1234567890}
+      CORS_ORIGIN: ${CAP_CORS_ORIGIN:-*}
+    volumes:
+      - cap_data:/usr/src/app/.data
+    ports:
+      - "8091:3000"
 
   mailhog:
     image: mailhog/mailhog:latest
     container_name: sam_mailhog
     restart: unless-stopped
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - "8026:8025"
+      - "1026:1025"
 
 volumes:
   db_data:
   uploads_data:
+  cap_data:

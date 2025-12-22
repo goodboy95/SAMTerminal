@@ -25,7 +25,7 @@ app:
     session-timeout-minutes: 30
 
 email:
-  altcha:
+  cap:
     test-mode: true
   encryption:
     key-base64: dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleQ==

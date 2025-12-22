@@ -43,7 +43,7 @@ class EmailVerificationServiceTest {
     private EmailVerificationProperties properties;
 
     @MockBean
-    private AltchaService altchaService;
+    private CapService capService;
 
     @MockBean
     private SmtpPoolService smtpPoolService;
@@ -53,7 +53,7 @@ class EmailVerificationServiceTest {
         logRepository.deleteAll();
         taskRepository.deleteAll();
         requestRepository.deleteAll();
-        when(altchaService.verifyPayload("payload", "1.1.1.1")).thenReturn(true);
+        when(capService.verifyToken("payload", "1.1.1.1")).thenReturn(true);
         when(smtpPoolService.hasAvailableSmtp()).thenReturn(true);
     }
 

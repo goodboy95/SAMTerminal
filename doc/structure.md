@@ -2,12 +2,12 @@
 
 - `frontend/`：React 18 + TypeScript + Vite 前端源代码。
   - `src/`：前端业务代码与组件（页面、UI 组件、hooks、lib 工具等）。
-    - `src/components/AltchaWidget.tsx`：ALTCHA Web Component 封装。
+    - `src/components/CapWidget.tsx`：CAP Web Component 封装。
     - `src/lib/imageCache.ts`：图片预加载缓存工具。
     - `src/lib/__tests__/imageCache.test.ts`：图片缓存的单元测试。
     - `src/pages/admin/EmailVerificationManager.tsx`：邮件验证管理后台页面。
-    - `src/pages/Index.tsx`：注册页（新增邮箱验证码与 ALTCHA 验证流程）。
-    - `src/types/altcha.d.ts`：ALTCHA 自定义元素类型声明。
+    - `src/pages/Index.tsx`：注册页（新增邮箱验证码与 CAP 验证流程）。
+    - `src/types/cap.d.ts`：CAP 自定义元素类型声明。
   - `public/`：静态资源。
   - `nginx.conf`：前端容器的 SPA 路由回退配置。
   - `Dockerfile`：前端构建并由 Nginx 提供静态文件的镜像定义。
@@ -16,10 +16,9 @@
   - `src/main/java/com/samterminal/backend/`：主业务代码、控制器、服务、实体、配置、DTO。
     - `config/AppProperties.java`：管理员账号与 LLM 相关配置载入。
     - `config/ClockConfig.java`：全局 Clock Bean（用于时间相关测试）。
-    - `config/EmailVerificationProperties.java`：邮件验证码、ALTCHA、限流与 SMTP 配置项。
+    - `config/EmailVerificationProperties.java`：邮件验证码、CAP、限流与 SMTP 配置项。
     - `config/LlmClientConfig.java`：LLM 请求 RestTemplate 超时配置。
     - `controller/ApiExceptionHandler.java`：统一参数校验错误返回。
-    - `controller/CaptchaController.java`：ALTCHA challenge/verify 代理接口。
     - `controller/EmailVerificationController.java`：注册验证码发送/校验接口。
     - `controller/AdminEmailVerificationController.java`：SMTP/日志/IP 统计与封禁管理接口。
     - `controller/WorldController.java`：世界地图与资源查询入口，初始化默认解锁地点。
@@ -30,7 +29,6 @@
     - `dto/EmailCodeVerifyRequest.java`：验证码预验证请求体。
     - `dto/EmailCodeVerifyResponse.java`：验证码预验证响应体。
     - `dto/EmailSendStatusResponse.java`：发送任务状态响应体。
-    - `dto/AltchaVerifyRequest.java`：ALTCHA payload 校验请求体。
     - `dto/EmailSmtpConfigRequest.java`：SMTP 配置请求体。
     - `dto/EmailSmtpConfigResponse.java`：SMTP 配置响应体（脱敏）。
     - `dto/EmailSendLogResponse.java`：发送日志列表响应体。
@@ -76,7 +74,7 @@
     - `service/AdminAccountService.java`：基于配置的管理员账号同步。
     - `service/LlmSettingMigrationService.java`：旧 LlmSetting 迁移至 API 池。
     - `service/NoAvailableApiException.java`：API 池无可用配置异常。
-    - `service/AltchaService.java`：ALTCHA challenge/verify 代理调用。
+    - `service/CapService.java`：CAP token 校验（siteverify）。
     - `service/EmailVerificationService.java`：验证码发送、验证与注册消费逻辑。
     - `service/EmailSendTaskWorker.java`：异步发送任务调度。
     - `service/EmailCryptoService.java`：验证码哈希与 AES-GCM 加密/解密。
@@ -110,13 +108,12 @@
 - `doc/`：项目文档
   - `structure.md`：本文件，记录目录与作用。
   - `api/`：接口文档（见各 Controller 对应文件，如 admin/world/game/player/upload）。
-    - `api/captcha.md`：ALTCHA challenge/verify 接口说明。
     - `api/email-verification.md`：注册邮箱验证码接口说明。
     - `api/admin-email-verification.md`：邮件验证管理后台接口说明。
-  - `captcha/`：注册邮件验证（ALTCHA + 邮件验证码）相关开发/安全/测试文档。
+  - `captcha/`：注册邮件验证（CAP + 邮件验证码）相关开发/安全/测试文档。
     - `captcha/README.md`：本目录索引与建议阅读顺序。
     - `captcha/development.md`：注册邮件验证功能的详细开发方案（前台、后台、后端、DB、接口建议）。
-    - `captcha/altcha.md`：ALTCHA 接入指南（含 Sentinel 部署/代理与前端 widget 集成建议）。
+    - `captcha/cap.md`：CAP 接入指南（含 Standalone 部署与前端 widget 集成建议）。
     - `captcha/security-performance.md`：安全与性能注意事项与建议默认参数。
     - `captcha/testing.md`：测试内容与方案（单测/集测/E2E 建议）。
   - `modules/`：模块设计与说明（含 LLM API 池模块说明）。
@@ -130,6 +127,6 @@
   - `test/integratedTest.md`：集成/系统测试用例清单。
   - `issues.md`：问题记录（若有）。
 - `sql/schema.sql`：MySQL 初始化表结构定义。
-- `docker-compose.yml`：编排前端、后端、MySQL、ChromaDB 服务的运行。
-- `build.sh`：一键构建、测试、镜像打包并启动 docker-compose 的脚本。
+- `docker-compose.yml`：编排前端、后端、MySQL、ChromaDB 服务的运行（后端/前端使用运行时镜像，挂载宿主机编译产物）。
+- `build.sh`：一键构建与测试前后端并启动 docker-compose（不构建自定义镜像，使用宿主机编译产物挂载运行）。
 - `AGENTS.md`：开发/测试强制要求。

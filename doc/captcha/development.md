@@ -8,7 +8,7 @@
 ### 1.1 前台（用户侧）
 注册页增加：
 - 邮件验证码输入框（右侧按钮“发送验证邮件”）。
-- 点击“发送验证邮件”时：**先做客户端 ALTCHA 验证**；通过后才调用后端发送验证码邮件。
+- 点击“发送验证邮件”时：**先做客户端 CAP 验证**；通过后才调用后端发送验证码邮件。
 - 验证码规则：
   - 有效期 **5 分钟**。
   - 重发间隔 **1 分钟**。
@@ -56,12 +56,12 @@
 
 ### 2.2 需要新增的后端能力（建议拆分）
 建议新增三个相对独立的后端子系统：
-1) **ALTCHA 校验**：为“发送验证码邮件”提供反滥用门槛（见 `doc/captcha/altcha.md`）。
+1) **CAP 校验**：为“发送验证码邮件”提供反滥用门槛（见 `doc/captcha/cap.md`）。
 2) **邮件验证码**：生成、发送、校验、过期/重发/限频。
 3) **管理端**：SMTP 配置、日志查询、IP 统计与封禁。
 
 ## 3. 数据与表结构（概要）
-详细建议见 `doc/captcha/altcha.md`（ALTCHA 相关）与 `doc/captcha/security-performance.md`（敏感字段处理）与 `doc/captcha/testing.md`（测试数据准备）。
+详细建议见 `doc/captcha/cap.md`（CAP 相关）与 `doc/captcha/security-performance.md`（敏感字段处理）与 `doc/captcha/testing.md`（测试数据准备）。
 
 建议新增/调整的表（MySQL，最终需同步到 `sql/schema.sql`）：
 - `email_smtp_config`：SMTP 服务配置（多条）。
@@ -80,7 +80,7 @@
 - 请求体（建议）：
   - `username: string`
   - `email: string`
-  - `altchaPayload: string`（ALTCHA widget 的 payload；后端必须再验一次）
+  - `capToken: string`（CAP widget 的 token；后端必须再验一次）
 - 返回（建议）：
   - `requestId: string`（UUID，用于后续注册时绑定该次发送）
   - `resendAvailableAt: string`（ISO 时间；前端用于倒计时）
@@ -88,7 +88,7 @@
 - 错误（建议）：
   - `429`：重发间隔未到 / 触发频控
   - `403`：IP 被封禁（AUTO 或 MANUAL）
-  - `400`：ALTCHA 校验失败 / 参数错误
+  - `400`：CAP 校验失败 / 参数错误
   - `503`：无可用 SMTP
 
 2) **注册（增强校验）**
@@ -149,9 +149,9 @@
 ## 5. 后端实现建议（Spring Boot 3）
 
 ### 5.1 关键服务拆分（建议类名）
-- `AltchaService`：校验 altchaPayload（见 `doc/captcha/altcha.md`）。
+- `CapService`：校验 capToken（见 `doc/captcha/cap.md`）。
 - `EmailVerificationService`：
-  - `sendRegisterCode(username, email, ip, altchaPayload)`
+  - `sendRegisterCode(username, email, ip, capToken)`
   - `verifyForRegister(requestId, email, code, ip)`
 - `SmtpPoolService`：
   - 随机选择可用 SMTP
@@ -193,8 +193,8 @@
   - 左侧：验证码输入框
   - 右侧：`发送验证邮件` 按钮（带倒计时：60s）
 - 点击“发送验证邮件”：
-  1) 弹出或展示 ALTCHA widget（见 `doc/captcha/altcha.md`）。
-  2) ALTCHA 验证成功后，调用 `POST /api/auth/register/email-code/send`。
+  1) 弹出或展示 CAP widget（见 `doc/captcha/cap.md`）。
+  2) CAP 验证成功后，调用 `POST /api/auth/register/email-code/send`。
   3) 成功后开始倒计时，并把 `emailRequestId` 缓存到 state（后续注册时提交）。
 - “提交档案”（注册）按钮的 enable 条件（按本需求优化后）：
   - 必须已获取 `emailRequestId`；
@@ -215,7 +215,7 @@
 1) DB：先落表（含索引）+ 更新 `sql/schema.sql`
 2) 后端：实现“发送验证码 + 注册校验 + IP 统计/封禁”最小闭环
 3) 后端：实现 SMTP 池（随机 + 熔断 + 超限）与发送日志查询
-4) 前端：注册页接入 ALTCHA + 发送按钮 + 注册请求携带验证码字段
+4) 前端：注册页接入 CAP + 发送按钮 + 注册请求携带验证码字段
 5) 前端：/admin 新增“邮件验证管理”页并对接接口
 6) 测试：补齐单元/集成测试；E2E 用例见 `doc/captcha/testing.md`
 
@@ -241,7 +241,7 @@ SMTP 发送链路的常见问题：
    - `attemptCount`、`nextAttemptAt`、`lastError`
    - `createdAt/updatedAt`
 2) `POST /api/auth/register/email-code/send` 流程调整：
-   - 仍先做：IP 封禁检查 → ALTCHA 后端校验 → 邮箱/域名过滤（见 8.2）→ 重发间隔检查
+   - 仍先做：IP 封禁检查 → CAP 后端校验 → 邮箱/域名过滤（见 8.2）→ 重发间隔检查
    - 生成验证码与 `email_verification_request` 记录（用于后续校验/过期/重发）
    - 写入 `email_send_task(PENDING, nextAttemptAt=now)` 与 `email_send_log(status=PENDING, codeEncrypted=...)`
    - **立即返回**：`{ requestId, resendAvailableAt, expiresAt, sendStatus: "PENDING" }`

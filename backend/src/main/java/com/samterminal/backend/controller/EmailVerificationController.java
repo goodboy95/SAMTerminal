@@ -43,7 +43,7 @@ public class EmailVerificationController {
             throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "发送过于频繁");
         }
         var response = emailVerificationService.sendRegisterCode(
-                request.getUsername(), request.getEmail(), ip, request.getAltchaPayload());
+                request.getUsername(), request.getEmail(), ip, request.getCapToken());
         return ResponseEntity.ok(response);
     }
 

@@ -62,10 +62,11 @@ email:
     verify-per-minute: 30
     send-per-minute: 10
     verify-code-per-minute: 30
-  altcha:
-    sentinel-base-url: ${ALTCHA_SENTINEL_BASE_URL:}
-    api-key: ${ALTCHA_SENTINEL_API_KEY:}
-    test-mode: ${ALTCHA_TEST_MODE:false}
+  cap:
+    base-url: ${CAP_BASE_URL:}
+    site-key: ${CAP_SITE_KEY:}
+    site-secret: ${CAP_SITE_SECRET:}
+    test-mode: ${CAP_TEST_MODE:false}
     request-timeout-seconds: 5
   domain-policy:
     allowlist: ${EMAIL_DOMAIN_ALLOWLIST:}

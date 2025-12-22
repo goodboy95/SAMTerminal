@@ -4,8 +4,8 @@
 
 ## 1. 测试范围
 本功能新增/改动点覆盖：
-- 用户侧：注册页 UI + ALTCHA + 发送验证码 + 注册校验
-- 后端：ALTCHA 校验、验证码生成/过期/重发间隔、SMTP 池与熔断、发送日志、IP 统计与封禁、管理端接口
+- 用户侧：注册页 UI + CAP + 发送验证码 + 注册校验
+- 后端：CAP 校验、验证码生成/过期/重发间隔、SMTP 池与熔断、发送日志、IP 统计与封禁、管理端接口
 - 管理端：SMTP 配置页、日志查询页、IP 统计与封禁操作
 
 ## 2. 测试环境建议
@@ -53,7 +53,7 @@
 ## 4. 后端集成测试（建议）
 用 H2 或 Testcontainers（MySQL）覆盖：
 - `POST /api/auth/register/email-code/send`：
-  - ALTCHA 失败 → 400
+  - CAP 失败 → 400
   - 触发封禁 → 403
   - SMTP 全不可用 → 503
   - 正常发送 → 200，返回 requestId + 时间字段
@@ -72,14 +72,14 @@
   - ip-stats 默认排序与自定义排序
   - manual ban/unban 行为
  - 限流：
-   - `/api/captcha/altcha/challenge`、`/api/captcha/altcha/verify`、`/api/auth/register/email-code/send`、`/api/auth/register/email-code/verify` 超阈值返回 429
+   - `/api/auth/register/email-code/send`、`/api/auth/register/email-code/verify` 超阈值返回 429
 
 ## 5. 前端功能测试（手动 + E2E）
 
 ### 5.1 用户侧（手动）
 场景：
-- ALTCHA 未完成：点击“发送验证邮件”不能调用后端（或后端返回 altcha invalid）
-- ALTCHA 完成：成功发送邮件，按钮进入 60s 倒计时
+- CAP 未完成：点击“发送验证邮件”不能调用后端（或后端返回 cap invalid）
+- CAP 完成：成功发送邮件，按钮进入 60s 倒计时
 - 60s 内重复点击：提示“重发间隔未到”
 - “验证验证码”动作：输入验证码后验证成功才允许点击“提交档案”
 - 输入错误验证码：注册失败提示
@@ -97,10 +97,10 @@
 
 ### 5.3 Playwright（系统测试）
 建议新增 E2E 脚本覆盖：
-- 注册页：完成 ALTCHA（可通过测试模式/Mock）→ 触发发送 → 输入验证码 → 注册成功
+- 注册页：完成 CAP（可通过测试模式/Mock）→ 触发发送 → 输入验证码 → 注册成功
 - 管理端：登录 → 进入“邮件验证管理”→ 检查 SMTP/日志/IP 统计页面可用、排序/分页/封禁动作可用
 
-> 若 ALTCHA 无法在 E2E 稳定完成：建议为测试环境提供“ALTCHA test 模式”或后端 mock 开关（仅测试环境启用），并在文档/配置中明确禁止生产开启。
+> 若 CAP 无法在 E2E 稳定完成：建议为测试环境提供“CAP test 模式”或后端 mock 开关（仅测试环境启用），并在文档/配置中明确禁止生产开启。
 
 执行时的访问入口提醒：
 - 前端：`http://samproject.seekerhut.com:8090`

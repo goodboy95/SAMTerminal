@@ -14,5 +14,5 @@ public class EmailCodeSendRequest {
     private String email;
 
     @NotBlank
-    private String altchaPayload;
+    private String capToken;
 }

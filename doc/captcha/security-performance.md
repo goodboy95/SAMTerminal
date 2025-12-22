@@ -4,9 +4,9 @@
 
 ## 1. 安全（必须项）
 
-### 1.1 不信任前端：后端必须二次校验 ALTCHA
-需求写的是“点击发送验证邮件时先进行客户端验证（使用 ALTCHA）”，但安全上必须做到：
-- 后端 `POST /api/auth/register/email-code/send` 必须验证 `altchaPayload`，否则脚本可直接绕过前端 UI 调用发送接口。
+### 1.1 不信任前端：后端必须二次校验 CAP
+需求写的是“点击发送验证邮件时先进行客户端验证（使用 CAP）”，但安全上必须做到：
+- 后端 `POST /api/auth/register/email-code/send` 必须验证 `capToken`，否则脚本可直接绕过前端 UI 调用发送接口。
 
 ### 1.2 验证码存储：用于校验的字段建议哈希化
 用于校验的主表建议：
@@ -31,12 +31,10 @@
 ### 1.4 频控：分层限流
 需求已有“重发间隔 1 分钟”与“IP 未验证超过 50 自动封禁”，仍建议补齐：
 - **邮箱级**：同一邮箱（或邮箱+IP） 1 分钟内只允许发送 1 次。
-- **IP 级**：`/challenge`、`/verify`、`/email-code/send` 都做限流（例如每 IP 每分钟 N 次），避免成本放大。
+- **IP 级**：`/email-code/send`、`/email-code/verify` 做限流（例如每 IP 每分钟 N 次），避免成本放大。
 - **全局**：对 SMTP 池加总并发上限（避免线程/连接被打满）。
 
 建议给出默认阈值（可配置化）：
-- `GET /api/captcha/altcha/challenge`：每 IP `30/min`（超出返回 429）
-- `POST /api/captcha/altcha/verify`：每 IP `30/min`（超出返回 429）
 - `POST /api/auth/register/email-code/send`：每 IP `10/min`；同一邮箱 `1/min`（并返回 `resendAvailableAt`）
 - `POST /api/auth/register/email-code/verify`：每 IP `30/min`（避免暴力猜码）
 
@@ -93,7 +91,7 @@ SMTP 配置属于高敏信息：
 
 ## 4. 性能（推荐项）
 
-### 4.1 ALTCHA 难度与端侧体验
+### 4.1 CAP 难度与端侧体验
 PoW 难度过高会导致：
 - 低端设备耗时过长、耗电、卡顿
 - 用户多次点“发送邮件”被迫等待

@@ -49,11 +49,11 @@ export const api = {
     if (!res.ok) throw new Error('注册失败');
     return res.json();
   },
-  async sendRegisterEmailCode(username: string, email: string, altchaPayload: string) {
+  async sendRegisterEmailCode(username: string, email: string, capToken: string) {
     const res = await fetch(`${API_BASE}/api/auth/register/email-code/send`, {
       method: 'POST',
       headers: jsonHeaders(),
-      body: JSON.stringify({ username, email, altchaPayload })
+      body: JSON.stringify({ username, email, capToken })
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

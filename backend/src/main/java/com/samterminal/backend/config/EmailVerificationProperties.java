@@ -16,7 +16,7 @@ public class EmailVerificationProperties {
     private int autoBanThreshold = 50;
     private Duration autoBanExtra = Duration.ofMinutes(5);
     private RateLimit rateLimit = new RateLimit();
-    private Altcha altcha = new Altcha();
+    private Cap cap = new Cap();
     private DomainPolicy domainPolicy = new DomainPolicy();
     private Smtp smtp = new Smtp();
     private SendTask sendTask = new SendTask();
@@ -31,9 +31,10 @@ public class EmailVerificationProperties {
     }
 
     @Data
-    public static class Altcha {
-        private String sentinelBaseUrl;
-        private String apiKey;
+    public static class Cap {
+        private String baseUrl;
+        private String siteKey;
+        private String siteSecret;
         private boolean testMode = false;
         private int requestTimeoutSeconds = 5;
     }

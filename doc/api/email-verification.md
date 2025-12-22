@@ -1,11 +1,11 @@
 # EmailVerificationController 接口
 
 ## POST /api/auth/register/email-code/send
-- 描述：发送注册验证码邮件（ALTCHA 校验后入队发送）。
-- 请求体：`{ username: string, email: string, altchaPayload: string }`
+- 描述：发送注册验证码邮件（CAP 校验后入队发送）。
+- 请求体：`{ username: string, email: string, capToken: string }`
 - 响应：`{ requestId: string, resendAvailableAt: string, expiresAt: string, sendStatus: "PENDING" }`
 - 错误：
-  - 400：ALTCHA 失败 / 参数错误 / 邮箱不支持
+  - 400：CAP 失败 / 参数错误 / 邮箱不支持
   - 403：IP 被封禁
   - 429：重发间隔未到（返回 `resendAvailableAt`）或触发频控
   - 503：无可用 SMTP

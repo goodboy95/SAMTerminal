@@ -35,7 +35,7 @@ public class EmailVerificationService {
     private final EmailIpBanService ipBanService;
     private final SmtpPoolService smtpPoolService;
     private final EmailVerificationProperties properties;
-    private final AltchaService altchaService;
+    private final CapService capService;
     private final Clock clock;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -48,7 +48,7 @@ public class EmailVerificationService {
                                     EmailIpBanService ipBanService,
                                     SmtpPoolService smtpPoolService,
                                     EmailVerificationProperties properties,
-                                    AltchaService altchaService,
+                                    CapService capService,
                                     Clock clock) {
         this.requestRepository = requestRepository;
         this.taskRepository = taskRepository;
@@ -59,16 +59,16 @@ public class EmailVerificationService {
         this.ipBanService = ipBanService;
         this.smtpPoolService = smtpPoolService;
         this.properties = properties;
-        this.altchaService = altchaService;
+        this.capService = capService;
         this.clock = clock;
     }
 
     @Transactional
-    public EmailCodeSendResponse sendRegisterCode(String username, String email, String ip, String altchaPayload) {
+    public EmailCodeSendResponse sendRegisterCode(String username, String email, String ip, String capToken) {
         ipBanService.assertNotBanned(ip);
         domainPolicyService.validateEmail(email);
-        if (!altchaService.verifyPayload(altchaPayload, ip)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "ALTCHA 校验失败");
+        if (!capService.verifyToken(capToken, ip)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "CAP 校验失败");
         }
         if (!smtpPoolService.hasAvailableSmtp()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "无可用 SMTP 服务");

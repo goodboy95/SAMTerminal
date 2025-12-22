@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowRight, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, API_BASE } from '@/lib/api';
-import AltchaWidget from '@/components/AltchaWidget';
+import { api } from '@/lib/api';
+import CapWidget from '@/components/CapWidget';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -26,10 +26,13 @@ const Index = () => {
   const [sendStatus, setSendStatus] = useState<'IDLE' | 'PENDING' | 'SENT' | 'FAILED'>('IDLE');
   const [sendLoading, setSendLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
-  const [showAltcha, setShowAltcha] = useState(false);
+  const [showCap, setShowCap] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const altchaTestMode = import.meta.env.VITE_ALTCHA_TEST_MODE === 'true';
+  const capTestMode = import.meta.env.VITE_CAP_TEST_MODE === 'true';
+  const capApiEndpoint =
+    import.meta.env.VITE_CAP_API_ENDPOINT ||
+    (import.meta.env.VITE_CAP_SITE_KEY ? `${window.location.origin}/cap/${import.meta.env.VITE_CAP_SITE_KEY}/` : '');
 
   useEffect(() => {
     setEmailRequestId(null);
@@ -136,17 +139,21 @@ const Index = () => {
       toast.error(err?.message || '发送失败');
     } finally {
       setSendLoading(false);
-      setShowAltcha(false);
+      setShowCap(false);
     }
   };
 
   const handleSendButton = () => {
     if (resendSecondsLeft > 0 || sendLoading) return;
-    if (altchaTestMode) {
+    if (capTestMode) {
       handleSendEmailCode('test-bypass');
       return;
     }
-    setShowAltcha(true);
+    if (!capApiEndpoint) {
+      toast.error('CAP 验证服务未配置');
+      return;
+    }
+    setShowCap(true);
   };
 
   const handleVerifyCode = async () => {
@@ -309,24 +316,23 @@ const Index = () => {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={showAltcha} onOpenChange={setShowAltcha}>
+        <Dialog open={showCap} onOpenChange={setShowCap}>
           <DialogContent className="bg-slate-900 border-white/10 text-white">
             <DialogHeader>
               <DialogTitle className="text-white">安全验证</DialogTitle>
               <DialogDescription className="text-slate-400">
-                完成 ALTCHA 验证后即可发送验证码邮件。
+                完成 CAP 验证后即可发送验证码邮件。
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              {altchaTestMode ? (
+              {capTestMode ? (
                 <div className="text-sm text-slate-300">
-                  当前为 ALTCHA 测试模式，将直接放行发送请求。
+                  当前为 CAP 测试模式，将直接放行发送请求。
                 </div>
               ) : (
-                <AltchaWidget
-                  challengeUrl={`${API_BASE}/api/captcha/altcha/challenge`}
-                  verifyUrl={`${API_BASE}/api/captcha/altcha/verify`}
-                  onVerified={handleSendEmailCode}
+                <CapWidget
+                  apiEndpoint={capApiEndpoint}
+                  onSolved={handleSendEmailCode}
                   onError={(message) => toast.error(message)}
                 />
               )}
